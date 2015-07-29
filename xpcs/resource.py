@@ -105,20 +105,17 @@ def is_stopped(ctx, name):
 @click.option('--managed', 'filter', flag_value='managed')
 @click.option('--unmanaged', 'filter', flag_value='unmanaged')
 @click.option('--failed', 'filter', flag_value='failed')
-@click.option('--negate', '-!', is_flag=True, default=False)
 @click.pass_context
-def list(ctx, filter='all', negate=False):
+def list(ctx, filter='all'):
     '''List resources'''
     filterfunc = make_filterfunc(filter)
 
     print '\n'.join(rsc['id'] for rsc in ctx.obj.resources
-                    if (not negate and filterfunc(rsc))
-                    or (negate and not filterfunc(rsc)))
+                    if filterfunc(rsc))
 
 
 @cli.command('wait')
 @click.option('--timeout', '-t', default=0)
-@click.option('--negate', '-!', is_flag=True, default=False)
 @click.option('--active', 'filter', flag_value='active', default=True)
 @click.option('--inactive', 'filter', flag_value='inactive')
 @click.option('--started', 'filter', flag_value='started')
@@ -128,7 +125,7 @@ def list(ctx, filter='all', negate=False):
 @click.option('--failed', 'filter', flag_value='failed')
 @click.argument('resources', nargs=-1, default=None)
 @click.pass_context
-def wait(ctx, negate=False, timeout=0, filter=None, resources=None):
+def wait(ctx, timeout=0, filter=None, resources=None):
     filterfunc = make_filterfunc(filter)
     wait_start = time.time()
 
@@ -139,10 +136,7 @@ def wait(ctx, negate=False, timeout=0, filter=None, resources=None):
             _resources = [resource for resource in ctx.obj.resources
                           if resource['id'] in resources]
 
-        if negate:
-            matched = any(filterfunc(rsc) for rsc in _resources)
-        else:
-            matched = any(not filterfunc(rsc) for rsc in _resources)
+        matched = any(not filterfunc(rsc) for rsc in _resources)
 
         if not matched:
             break

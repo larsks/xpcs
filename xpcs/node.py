@@ -72,7 +72,6 @@ def is_shutdown(ctx, name):
 
 @cli.command('wait')
 @click.option('--timeout', '-t', default=0)
-@click.option('--negate', '-!', is_flag=True, default=False)
 @click.option('--online', 'filter', flag_value='online', default=True)
 @click.option('--offline', 'filter', flag_value='offline')
 @click.option('--standby', 'filter', flag_value='standby')
@@ -83,7 +82,7 @@ def is_shutdown(ctx, name):
 @click.option('--maintenance', 'filter', flag_value='maintenance')
 @click.argument('nodes', nargs=-1, default=None)
 @click.pass_context
-def wait(ctx, negate=False, timeout=0, all=False, filter=None, nodes=None):
+def wait(ctx, timeout=0, filter=None, nodes=None):
     filterfunc = make_filterfunc(filter)
     wait_start = time.time()
 
@@ -94,10 +93,7 @@ def wait(ctx, negate=False, timeout=0, all=False, filter=None, nodes=None):
             _nodes = [node for node in ctx.obj.nodes
                       if node['name'] in nodes]
 
-        if negate:
-            matched = any(filterfunc(node) for node in _nodes)
-        else:
-            matched = any(not filterfunc(node) for node in _nodes)
+        matched = any(not filterfunc(node) for node in _nodes)
 
         if not matched:
             break
@@ -121,7 +117,7 @@ def wait(ctx, negate=False, timeout=0, all=False, filter=None, nodes=None):
 @click.option('--maintenance', 'filter', flag_value='maintenance')
 @click.pass_context
 def list(ctx, filter='all'):
-    '''List resources'''
+    '''List nodes'''
     filterfunc = make_filterfunc(filter)
     print '\n'.join(node['name'] for node in ctx.obj.nodes
                     if filterfunc(node))
