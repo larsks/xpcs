@@ -32,17 +32,17 @@ class PCS(object):
         return (Node(x) for x in
                 self.status.xpath('/crm_mon/nodes/node'))
 
-    def resource(self, rid):
+    def resource(self, name):
         rsc = self.status.xpath(
-            '/crm_mon/resources/resource[@id="%s"]' % rid)
+            '/crm_mon/resources/resource[@id="%s"]' % name)
         if not len(rsc):
-            raise ResourceNotFound(rid)
+            raise ResourceNotFound(name)
 
         return Resource(rsc[0])
 
     def node(self, name):
         node = self.status.xpath(
-            '/crm_mon/nodes/node[@name="%s"]' % rid)
+            '/crm_mon/nodes/node[@name="%s"]' % name)
         if not len(node):
             raise NodeNotFound(name)
 
