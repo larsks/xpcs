@@ -4,6 +4,21 @@ import xpcs.globals
 import xpcs.exc
 
 
+def make_filterfunc(filter):
+    if filter == 'all':
+        filterfunc = lambda rsc: True
+    elif filter == 'started':
+        filterfunc = lambda rsc: rsc['role'] == 'Started'
+    elif filter == 'stopped':
+        filterfunc = lambda rsc: rsc['role'] == 'Stopped'
+    elif filter in ['active', 'failed', 'managed', 'orphaned']:
+        filterfunc = lambda rsc: rsc[filter] == 'true'
+    else:
+        raise ValueError(filter)
+
+    return filterfunc
+
+
 @click.group('resource')
 def cli():
     pass
@@ -74,98 +89,6 @@ def is_stopped(ctx, name):
     ctx.exit(int(not state))
 
 
-@cli.command('wait-for-start')
-@click.option('--timeout', '-t', default=0)
-@click.argument('name')
-@click.pass_context
-def wait_for_start(ctx, name, timeout=0):
-    '''Wait for the given resource to start'''
-    wait_start = time.time()
-    while True:
-        state = ctx.obj.resource(name)['role'] == 'Started'
-        if state:
-            break
-
-        if timeout and (time.time() >= wait_start + timeout):
-            raise xpcs.exc.TimeoutError(
-                'Timed out while waiting for %s' % name)
-
-        time.sleep(1)
-
-    if not xpcs.globals.quiet:
-        print 'resource %s is started' % name
-
-
-@cli.command('wait-for-stop')
-@click.option('--timeout', '-t', default=0)
-@click.argument('name')
-@click.pass_context
-def wait_for_stop(ctx, name, timeout=0):
-    '''Wait for the given resource to stop'''
-    wait_start = time.time()
-    while True:
-        state = ctx.obj.resource(name)['role'] == 'Stopped'
-        if state:
-            break
-
-        if timeout and (time.time() >= wait_start + timeout):
-            raise xpcs.exc.TimeoutError(
-                'Timed out while waiting for %s' % name)
-
-        time.sleep(1)
-
-    if not xpcs.globals.quiet:
-        print 'resource %s is stopped' % name
-
-
-@cli.command('wait-all-stop')
-@click.option('--timeout', '-t', default=0)
-@click.pass_context
-def wait_all_stop(ctx, timeout=0):
-    '''Wait for all resources to stop'''
-    wait_start = time.time()
-    while True:
-        started = any(
-            rsc['role'] != 'Stopped'
-            for rsc in ctx.obj.resources)
-
-        if not started:
-            break
-
-        if timeout and (time.time() >= wait_start + timeout):
-            raise xpcs.exc.TimeoutError(
-                'Timed out while waiting for resources to stop')
-
-        time.sleep(1)
-
-    if not xpcs.globals.quiet:
-        print 'all resources are stopped'
-
-
-@cli.command('wait-all-start')
-@click.option('--timeout', '-t', default=0)
-@click.pass_context
-def wait_all_start(ctx, timeout=0):
-    '''Wait for all resources to start'''
-    wait_start = time.time()
-    while True:
-        stopped = any(
-            rsc['role'] != 'Started'
-            for rsc in ctx.obj.resources)
-
-        if not stopped:
-            break
-
-        if timeout and (time.time() >= wait_start + timeout):
-            raise xpcs.exc.TimeoutError(
-                'Timed out while waiting for resources to start')
-
-        time.sleep(1)
-
-    if not xpcs.globals.quiet:
-        print 'all resources are started'
-
-
 @cli.command('list')
 @click.option('--all', 'filter', flag_value='all', default=True)
 @click.option('--started', 'filter', flag_value='started')
@@ -188,3 +111,37 @@ def list(ctx, filter='all'):
 
     print '\n'.join(rsc['id'] for rsc in ctx.obj.resources
                     if filterfunc(rsc))
+
+
+@cli.command('wait')
+@click.option('--timeout', '-t', default=0)
+@click.option('--negate', '-!', is_flag=True, default=False)
+@click.option('--active', 'filter', flag_value='active', default=True)
+@click.option('--started', 'filter', flag_value='started')
+@click.option('--stopped', 'filter', flag_value='stopped')
+@click.argument('resources', nargs=-1, default=None)
+@click.pass_context
+def wait(ctx, negate=False, timeout=0, filter=None, resources=None):
+    filterfunc = make_filterfunc(filter)
+    wait_start = time.time()
+
+    while True:
+        if not len(resources):
+            _resources = [resource for resource in ctx.obj.resources]
+        else:
+            _resources = [resource for resource in ctx.obj.resources
+                          if resource['id'] in resources]
+
+        if negate:
+            matched = any(filterfunc(rsc) for rsc in _resources)
+        else:
+            matched = any(not filterfunc(rsc) for rsc in _resources)
+
+        if not matched:
+            break
+
+        if timeout and (time.time() >= wait_start + timeout):
+            raise xpcs.exc.TimeoutError(
+                'Timed out while waiting for resources')
+
+        time.sleep(1)
