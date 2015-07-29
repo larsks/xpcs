@@ -6,11 +6,20 @@ import xpcs.exc
 
 
 def make_filterfunc(filter):
+    filtermap = {
+        'offline': 'online',
+        'clean': 'unclean',
+        'in-use': 'standby',
+        'running': 'shutdown'}
+
     if filter == 'all':
         filterfunc = lambda node: True
     elif filter in ['online', 'standby', 'shutdown', 'unclean',
                     'maintenace']:
         filterfunc = lambda node: node[filter] == 'true'
+    elif filter in filtermap:
+        filter = filtermap[filter]
+        filterfunc = lambda node: node[filter] == 'false'
     else:
         raise ValueError(filter)
 
@@ -65,9 +74,12 @@ def is_shutdown(ctx, name):
 @click.option('--timeout', '-t', default=0)
 @click.option('--negate', '-!', is_flag=True, default=False)
 @click.option('--online', 'filter', flag_value='online', default=True)
+@click.option('--offline', 'filter', flag_value='offline')
 @click.option('--standby', 'filter', flag_value='standby')
+@click.option('--in-use', 'filter', flag_value='in-use')
 @click.option('--shutdown', 'filter', flag_value='shutdown')
 @click.option('--unclean', 'filter', flag_value='unclean')
+@click.option('--clean', 'filter', flag_value='clean')
 @click.option('--maintenance', 'filter', flag_value='maintenance')
 @click.argument('nodes', nargs=-1, default=None)
 @click.pass_context
@@ -100,9 +112,12 @@ def wait(ctx, negate=False, timeout=0, all=False, filter=None, nodes=None):
 @cli.command('list')
 @click.option('--all', 'filter', flag_value='all', default=True)
 @click.option('--online', 'filter', flag_value='online')
+@click.option('--offline', 'filter', flag_value='offline')
 @click.option('--standby', 'filter', flag_value='standby')
+@click.option('--in-use', 'filter', flag_value='in-use')
 @click.option('--shutdown', 'filter', flag_value='shutdown')
 @click.option('--unclean', 'filter', flag_value='unclean')
+@click.option('--clean', 'filter', flag_value='clean')
 @click.option('--maintenance', 'filter', flag_value='maintenance')
 @click.pass_context
 def list(ctx, filter='all'):

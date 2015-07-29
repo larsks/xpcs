@@ -5,6 +5,10 @@ import xpcs.exc
 
 
 def make_filterfunc(filter):
+    filtermap = {
+        'inactive': 'active',
+        'unmanaged': 'managed'}
+
     if filter == 'all':
         filterfunc = lambda rsc: True
     elif filter == 'started':
@@ -13,6 +17,9 @@ def make_filterfunc(filter):
         filterfunc = lambda rsc: rsc['role'] == 'Stopped'
     elif filter in ['active', 'failed', 'managed', 'orphaned']:
         filterfunc = lambda rsc: rsc[filter] == 'true'
+    elif filter in filtermap:
+        filter = filtermap[filter]
+        filterfunc = lambda rsc: rsc[filter] == 'false'
     else:
         raise ValueError(filter)
 
@@ -94,31 +101,31 @@ def is_stopped(ctx, name):
 @click.option('--started', 'filter', flag_value='started')
 @click.option('--stopped', 'filter', flag_value='stopped')
 @click.option('--active', 'filter', flag_value='active')
+@click.option('--inactive', 'filter', flag_value='inactive')
+@click.option('--managed', 'filter', flag_value='managed')
+@click.option('--unmanaged', 'filter', flag_value='unmanaged')
 @click.option('--failed', 'filter', flag_value='failed')
+@click.option('--negate', '-!', is_flag=True, default=False)
 @click.pass_context
-def list(ctx, filter='all'):
+def list(ctx, filter='all', negate=False):
     '''List resources'''
-    if filter == 'all':
-        filterfunc = lambda rsc: True
-    elif filter == 'started':
-        filterfunc = lambda rsc: rsc['role'] == 'Started'
-    elif filter == 'stopped':
-        filterfunc = lambda rsc: rsc['role'] == 'Stopped'
-    elif filter == 'active':
-        filterfunc = lambda rsc: rsc['active'] == 'true'
-    elif filter == 'failed':
-        filterfunc = lambda rsc: rsc['failed'] == 'true'
+    filterfunc = make_filterfunc(filter)
 
     print '\n'.join(rsc['id'] for rsc in ctx.obj.resources
-                    if filterfunc(rsc))
+                    if (not negate and filterfunc(rsc))
+                    or (negate and not filterfunc(rsc)))
 
 
 @cli.command('wait')
 @click.option('--timeout', '-t', default=0)
 @click.option('--negate', '-!', is_flag=True, default=False)
 @click.option('--active', 'filter', flag_value='active', default=True)
+@click.option('--inactive', 'filter', flag_value='inactive')
 @click.option('--started', 'filter', flag_value='started')
 @click.option('--stopped', 'filter', flag_value='stopped')
+@click.option('--managed', 'filter', flag_value='managed')
+@click.option('--unmanaged', 'filter', flag_value='unmanaged')
+@click.option('--failed', 'filter', flag_value='failed')
 @click.argument('resources', nargs=-1, default=None)
 @click.pass_context
 def wait(ctx, negate=False, timeout=0, filter=None, resources=None):
