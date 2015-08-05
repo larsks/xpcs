@@ -91,6 +91,12 @@ The `xpcs` command supports the following operations on nodes:
 
     # xpcs node wait
 
+# Contact
+
+Please reports bugs using the [issue tracker][].
+
+[issue tracker]: https://github.com/larsks/xpcs/issues
+
 # License
 
 xpcs, a Pacemaker utility  
