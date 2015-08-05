@@ -16,6 +16,11 @@ Or by cloning the source and running `setup.py`:
     $ cd xpcs
     $ python setup.py install
 
+The `xpcs` command uses the [click][] command line framework. Either
+of the above commands will also install this dependency.
+
+[click]: http://click.pocoo.org/
+
 # Resources
 
 The `xpcs` command supports the follow resource operations:
