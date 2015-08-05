@@ -5,12 +5,10 @@ with open('requirements.txt') as fd:
 
 with open('requirements.txt') as fd:
     setup(name='xpcs',
-          version='0.1',
+          author='Lars Kellogg-Stedman',
+          author_email='lars@oddbit.com',
+          url='https://github.com/larsks/xpcs',
+          version='0.2',
           packages=find_packages(),
           install_requires=requires,
-          entry_points={
-              'console_scripts': [
-                  'xpcs = xpcs.main:cli',
-              ],
-          }
-          )
+          entry_points={'console_scripts': ['xpcs = xpcs.main:cli',],})
