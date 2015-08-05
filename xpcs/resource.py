@@ -126,6 +126,7 @@ def list(ctx, filter='all'):
 @click.argument('resources', nargs=-1, default=None)
 @click.pass_context
 def wait(ctx, timeout=0, filter=None, resources=None):
+    '''Wait for resources to reach desired state'''
     filterfunc = make_filterfunc(filter)
     wait_start = time.time()
 
